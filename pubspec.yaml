@@ -1,0 +1,18 @@
+name: sylph
+version: 1.0.0+1
+publish_to: none
+description: Sylph — Weather & Air
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  http: ^1.1.0
+  shared_preferences: ^2.2.2
+  google_fonts: ^6.2.0
+
+flutter:
+  uses-material-design: true
