@@ -231,19 +231,19 @@ class StorageService {
   static const String _historyKey = 'sylph_history';
   static const String _prefsKey = 'sylph_prefs';
 
-  static Future<List<<HistoryItem>> loadHistory() async {
+  static Future<List<HistoryItem>> loadHistory() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonStr = prefs.getString(_historyKey);
     if (jsonStr == null) return [];
     try {
-      final List<<dynamic> decoded = jsonDecode(jsonStr);
+      final List<dynamic> decoded = jsonDecode(jsonStr);
       return decoded.map((e) => HistoryItem.fromJson(e)).toList();
     } catch (_) {
       return [];
     }
   }
 
-  static Future<void> saveHistory(List<<HistoryItem> history) async {
+  static Future<void> saveHistory(List<HistoryItem> history) async {
     final prefs = await SharedPreferences.getInstance();
     final encoded = jsonEncode(history.map((e) => e.toJson()).toList());
     await prefs.setString(_historyKey, encoded);
@@ -278,7 +278,7 @@ class StorageService {
 //  API SERVICE
 // ═══════════════════════════════════════════════════════════
 class ApiService {
-  static Future<<WeatherData> fetchWeather(String city) async {
+  static Future<WeatherData> fetchWeather(String city) async {
     final url = Uri.parse(
       'https://api.openweathermap.org/data/2.5/weather?q=${Uri.encodeComponent(city)}&appid=$OWM_KEY&units=metric',
     );
@@ -289,7 +289,7 @@ class ApiService {
     return WeatherData.fromJson(jsonDecode(response.body));
   }
 
-  static Future<<AQIData?> fetchAQI(String city) async {
+  static Future<AQIData?> fetchAQI(String city) async {
     try {
       final url = Uri.parse(
         'https://api.waqi.info/feed/${Uri.encodeComponent(city)}/?token=$WAQI_KEY',
@@ -407,7 +407,7 @@ List<Map<String, dynamic>> getPrecautions(double temp, int humidity, double wind
     if (aqi > 300) precs.add({'color': const Color(0xFFcc0000), 'text': 'Hazardous air. Stay indoors. Use air purifiers. Wear N95 masks if outdoor travel is essential.'});
     else if (aqi > 200) precs.add({'color': const Color(0xFFb34ef0), 'text': 'Very unhealthy air. Everyone should avoid all outdoor activity. N95 mask required outside.'});
     else if (aqi > 150) precs.add({'color': AppColors.danger, 'text': 'Unhealthy air quality. Avoid outdoor exercise. Sensitive groups must stay indoors.'});
-    else if (aqi > 100) precs.add({'color': const Color(0xFFf07f4e), 'text': 'Air quality affecting sensitive groups. Children, elderly, and those with respiratory conditions should limit outdoor time.'});
+    else if (aqi > 100) precs.add({'color': const Color(0xFFf07f4e), 'text': 'Air quality affecting sensitive groups. Children, elderly, and those with respiratory conditions should limit outdoor activity.'});
   }
   if (precs.isEmpty) precs.add({'color': AppColors.good, 'text': 'Conditions look good! No major precautions needed. Enjoy your day.'});
   return precs;
@@ -667,13 +667,13 @@ class AnimatedOrbs extends StatefulWidget {
   final int weatherCode;
   final double temp;
 
-  const AnimatedOrbs({super.key, required this.weatherCode, required this.temp});
+  AnimatedOrbs({required this.weatherCode, required this.temp});
 
   @override
-  State<<AnimatedOrbs> createState() => _AnimatedOrbsState();
+  State<AnimatedOrbs> createState() => _AnimatedOrbsState();
 }
 
-class _AnimatedOrbsState extends State<<AnimatedOrbs>
+class _AnimatedOrbsState extends State<AnimatedOrbs>
     with TickerProviderStateMixin {
   late AnimationController _ctrl1;
   late AnimationController _ctrl2;
@@ -698,7 +698,7 @@ class _AnimatedOrbsState extends State<<AnimatedOrbs>
     super.dispose();
   }
 
-  List<<Color> get _orbColors {
+  List<Color> get _orbColors {
     final code = widget.weatherCode;
     final temp = widget.temp;
 
@@ -783,7 +783,7 @@ class SkyGradient extends StatelessWidget {
   final int weatherCode;
   final int timezone;
 
-  const SkyGradient({super.key, required this.weatherCode, required this.timezone});
+  SkyGradient({required this.weatherCode, required this.timezone});
 
   @override
   Widget build(BuildContext context) {
@@ -798,7 +798,7 @@ class SkyGradient extends StatelessWidget {
     );
   }
 
-  List<<Color> _getColors() {
+  List<Color> _getColors() {
     final utcMs = DateTime.now().millisecondsSinceEpoch + DateTime.now().timeZoneOffset.inMilliseconds;
     final local = DateTime.fromMillisecondsSinceEpoch(utcMs + timezone * 1000);
     final h = local.hour + local.minute / 60;
@@ -837,10 +837,10 @@ class WeatherHomePage extends StatefulWidget {
   const WeatherHomePage({super.key});
 
   @override
-  State<<WeatherHomePage> createState() => _WeatherHomePageState();
+  State<WeatherHomePage> createState() => _WeatherHomePageState();
 }
 
-class _WeatherHomePageState extends State<<WeatherHomePage>
+class _WeatherHomePageState extends State<WeatherHomePage>
     with TickerProviderStateMixin {
   final TextEditingController _cityController = TextEditingController();
   bool _isLoading = false;
@@ -849,7 +849,7 @@ class _WeatherHomePageState extends State<<WeatherHomePage>
   AQIData? _aqi;
   String _currentUnit = 'C';
   Map<String, dynamic> _prefs = {};
-  List<<HistoryItem> _history = [];
+  List<HistoryItem> _history = [];
 
   @override
   void initState() {
@@ -954,212 +954,79 @@ class _WeatherHomePageState extends State<<WeatherHomePage>
 
   String _getSym() => _currentUnit == 'C' ? '°C' : '°F';
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          if (_weather != null)
-            SkyGradient(weatherCode: _weather!.weatherCode, timezone: _weather!.timezone),
-          if (_weather != null)
-            AnimatedOrbs(weatherCode: _weather!.weatherCode, temp: _weather!.temp),
-          Container(
-            color: _weather == null ? AppColors.bg : Colors.transparent,
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 24),
-                  _buildSearch(),
-                  if (_error != null) ...[
-                    const SizedBox(height: 16),
-                    _buildError(),
-                  ],
-                  if (_isLoading) ...[
-                    const SizedBox(height: 80),
-                    _buildLoader(),
-                  ],
-                  if (_weather != null && !_isLoading) ...[
-                    const SizedBox(height: 28),
-                    _buildResults(),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildHeader() {
     final hour = DateTime.now().hour;
-    final greeting = getGreeting(hour);
-    final name = _prefs['userName'] ?? '';
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(text: 'Syl', style: AppFonts.boldonse(size: 28)),
-                  TextSpan(text: 'ph', style: AppFonts.boldonse(size: 28, color: AppColors.accent)),
-                ],
-              ),
+            Text(
+              getGreeting(hour),
+              style: AppFonts.display(size: 28),
             ),
-            if (name.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '$greeting, $name 👋',
-                  style: AppFonts.body(size: 14, color: const Color.fromRGBO(240, 237, 232, 0.88)),
-                ),
-              ),
-            if (_prefs['homeCity'] != null)
-              GestureDetector(
-                onTap: () {
-                  _cityController.text = _prefs['homeCity'];
-                  _fetchData();
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(top: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color.fromRGBO(200, 240, 78, 0.07),
-                    border: Border.all(color: const Color.fromRGBO(200, 240, 78, 0.22)),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.home, size: 10, color: AppColors.accent),
-                      const SizedBox(width: 5),
-                      Text(
-                        _prefs['homeCity'],
-                        style: AppFonts.label(size: 10, color: AppColors.accent),
-                      ),
-                    ],
-                  ),
-                ),
+            if (_prefs['userName'] != null)
+              Text(
+                _prefs['userName'],
+                style: AppFonts.body(size: 14, color: AppColors.muted),
               ),
           ],
         ),
-        Row(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                border: Border.all(color: AppColors.border),
-                borderRadius: BorderRadius.circular(100),
-              ),
-              padding: const EdgeInsets.all(3),
-              child: Row(
-                children: [
-                  _unitButton('C'),
-                  _unitButton('F'),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            _iconButton(Icons.settings, _showSettings),
-          ],
-        ),
+        _iconButton(Icons.settings, _showSettings),
       ],
-    );
-  }
-
-  Widget _unitButton(String unit) {
-    final isActive = _currentUnit == unit;
-    return GestureDetector(
-      onTap: () => _setUnit(unit),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.accent : Colors.transparent,
-          borderRadius: BorderRadius.circular(100),
-        ),
-        child: Text(
-          '°$unit',
-          style: AppFonts.body(
-            size: 13,
-            weight: FontWeight.w500,
-            color: isActive ? AppColors.bg : AppColors.muted,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _iconButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border.all(color: AppColors.border),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, size: 16, color: AppColors.muted),
-      ),
     );
   }
 
   Widget _buildSearch() {
     return Container(
+      height: 52,
       decoration: BoxDecoration(
         color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(100),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      child: Row(
-        children: [
-          const SizedBox(width: 12),
-          Icon(Icons.search, size: 18, color: Colors.white.withOpacity(0.35)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _cityController,
-              style: AppFonts.body(size: 16, color: AppColors.text),
-              decoration: InputDecoration(
-                hintText: 'Enter a city — Tokyo, London, New York…',
-                hintStyle: AppFonts.body(size: 16, color: AppColors.muted),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onSubmitted: (_) => _fetchData(),
-            ),
-          ),
-          GestureDetector(
-            onTap: _fetchData,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 11),
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: Text(
-                'SEARCH',
-                style: AppFonts.body(
-                  size: 12,
-                  weight: FontWeight.w700,
-                  color: AppColors.bg,
+      child: TextField(
+        controller: _cityController,
+        style: AppFonts.body(),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          hintText: 'Search location...',
+          hintStyle: AppFonts.body(color: AppColors.muted),
+          suffixIcon: _isLoading
+              ? const Padding(
+                  padding: EdgeInsets.all(14),
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(AppColors.accent),
+                    ),
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: _iconButton(Icons.search, _fetchData),
                 ),
-              ),
-            ),
-          ),
-        ],
+        ),
+        onSubmitted: (_) => _fetchData(),
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.danger.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.danger.withOpacity(0.3)),
+      ),
+      child: Text(
+        _error!,
+        style: AppFonts.body(size: 13, color: AppColors.danger),
       ),
     );
   }
@@ -1168,835 +1035,203 @@ class _WeatherHomePageState extends State<<WeatherHomePage>
     return Center(
       child: Column(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.accent, width: 2),
-            ),
-            child: const CircularProgressIndicator(
+          const SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(
               strokeWidth: 2,
               valueColor: AlwaysStoppedAnimation(AppColors.accent),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
-            'FETCHING ATMOSPHERE DATA',
-            style: AppFonts.label(size: 11, color: AppColors.muted),
+            'Fetching weather data...',
+            style: AppFonts.body(size: 13, color: AppColors.muted),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildError() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color.fromRGBO(240, 78, 106, 0.08),
-        border: Border.all(color: const Color.fromRGBO(240, 78, 106, 0.25)),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        _error!,
-        style: AppFonts.body(size: 14, color: AppColors.danger),
       ),
     );
   }
 
   Widget _buildResults() {
+    final w = _weather!;
+    final tempV = _formatTemp(w.temp);
+    final feelsV = _formatTemp(w.feelsLike);
+    final sym = _getSym();
+    final outfit = getOutfit(w.temp, w.humidity, w.windSpeed, w.weatherCode);
+    final uv = estimateUV(w.weatherCode, w.temp);
+    final acts = getActivities(w.temp, w.humidity, w.windSpeed, _aqi?.aqi, w.weatherCode);
+    final precs = getPrecautions(w.temp, w.humidity, w.windSpeed, _aqi?.aqi, w.weatherCode);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildCityHero(),
-        const SizedBox(height: 14),
-        _buildWeatherCard(),
-        const SizedBox(height: 14),
-        _buildStatsGrid3(),
-        const SizedBox(height: 14),
-        _buildStatsGrid2(),
-        const SizedBox(height: 14),
-        _buildAQICard(),
-        const SizedBox(height: 28),
-        _buildActivities(),
-        const SizedBox(height: 28),
-        _buildPrecautions(),
-        const SizedBox(height: 36),
-        _buildLeavingNowButton(),
-        const SizedBox(height: 36),
+        _buildNow(),
+        const SizedBox(height: 20),
+        _buildAQI(),
+        const SizedBox(height: 20),
+        _buildLeavingNow(outfit, tempV, feelsV, sym, uv),
+        const SizedBox(height: 20),
+        _buildActivities(acts),
+        const SizedBox(height: 20),
+        _buildPrecautions(precs),
+        const SizedBox(height: 20),
         _buildFooter(),
       ],
     );
   }
 
-  Widget _buildCityHero() {
+  Widget _buildNow() {
+    final w = _weather!;
+    final tempV = _formatTemp(w.temp);
+    final sym = _getSym();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          _weather!.city,
-          style: AppFonts.display(size: 48),
-        ),
-        const SizedBox(height: 10),
         Row(
-          children: [
-            Text(
-              _weather!.country,
-              style: AppFonts.body(size: 12, color: const Color.fromRGBO(240, 237, 232, 0.80)),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 3,
-              height: 3,
-              decoration: const BoxDecoration(
-                color: Color.fromRGBO(240, 237, 232, 0.55),
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              _weather!.localTime.toString().substring(11, 16),
-              style: AppFonts.body(size: 12, color: const Color.fromRGBO(240, 237, 232, 0.80)),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 3,
-              height: 3,
-              decoration: const BoxDecoration(
-                color: Color.fromRGBO(240, 237, 232, 0.55),
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '${_weather!.lat.toStringAsFixed(2)}°, ${_weather!.lon.toStringAsFixed(2)}°',
-              style: AppFonts.body(size: 12, color: const Color.fromRGBO(240, 237, 232, 0.80)),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWeatherCard() {
-    final temp = _formatTemp(_weather!.temp);
-    final feelsLike = _formatTemp(_weather!.feelsLike);
-    final sym = _getSym();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 30),
-      decoration: BoxDecoration(
-        color: AppColors.cardTint,
-        border: Border.all(color: AppColors.cardBorder),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$temp°',
-                  style: AppFonts.display(size: 64),
-                ),
-                Text(
-                  _weather!.description,
-                  style: AppFonts.body(
-                    size: 17,
-                    color: const Color.fromRGBO(240, 237, 232, 0.80),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Feels like $feelsLike$sym',
-                  style: AppFonts.body(size: 14, color: const Color.fromRGBO(240, 237, 232, 0.65)),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  "Your skin doesn't do facts, only vibes.",
-                  style: AppFonts.body(
-                    size: 13,
-                    color: const Color.fromRGBO(240, 237, 232, 0.72),
-                  ).copyWith(fontStyle: FontStyle.italic),
-                ),
-              ],
-            ),
-          ),
-          WeatherIcon(code: _weather!.weatherCode, size: 90),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsGrid3() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Humidity',
-            '${_weather!.humidity}%',
-            "How sweaty the air is. At 90%, you're not walking — you're wading.",
-            "Humidity is the amount of water vapour in the air. Below 30% feels crispy-dry. 60–80% is that sticky, muggy feeling. Above 90%, sweat stops evaporating — your body's cooling system basically gives up.",
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: _buildStatCard(
-            'Wind Speed',
-            '${_weather!.windSpeed.toStringAsFixed(1)} m/s',
-            "How fast the air is speed-running past your face right now.",
-            "Wind speed in metres per second. Under 3 m/s is a gentle breeze. 8–10 m/s starts messing with umbrellas and hairstyles. Above 15 m/s? Loose objects become projectiles.",
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: _buildStatCard(
-            'Visibility',
-            '${(_weather!.visibility / 1000).toStringAsFixed(1)} km',
-            "How far you can see before the world goes blurry. Low? Maybe don't speed.",
-            "Visibility in km. 10 km is a clear day. Below 4 km means haze or fog is building up. Below 1 km is when pilots decline invitations and drivers should slow way down.",
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsGrid2() {
-    final uv = estimateUV(_weather!.weatherCode, _weather!.temp);
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Pressure',
-            '${_weather!.pressure} hPa',
-            "The entire atmosphere sitting on everything. Your joints might disagree.",
-            'Normal is ~1013 hPa. Dropping pressure = rain coming. Rising = clearer skies. Sharp drops = why your knees "know" when storms are coming.',
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.cardTint,
-              border: Border.all(color: AppColors.cardBorder),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('UV Index', style: AppFonts.label()),
-                    _infoButton(
-                      'UV Index',
-                      'UV Index: 0–2 safe. 3–5 wear sunscreen. 6–7 SPF is non-negotiable. 8+ and the sun has decided to take things personally — hat, shade, and SPF 50+.',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  "The sun's current mood. High UV = the sun is taking things personally.",
-                  style: AppFonts.body(
-                    size: 13,
-                    color: const Color.fromRGBO(240, 237, 232, 0.72),
-                  ).copyWith(fontStyle: FontStyle.italic),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  uv.val,
-                  style: AppFonts.display(size: 28),
-                ),
-                Text(
-                  uv.label,
-                  style: AppFonts.body(size: 14, color: const Color.fromRGBO(240, 237, 232, 0.65)),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(String label, String value, String pun, String tooltip) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardTint,
-        border: Border.all(color: AppColors.cardBorder),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(label, style: AppFonts.label()),
-              _infoButton(label, tooltip),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            pun,
-            style: AppFonts.body(
-              size: 13,
-              color: const Color.fromRGBO(240, 237, 232, 0.72),
-            ).copyWith(fontStyle: FontStyle.italic),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: AppFonts.display(size: 28),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoButton(String title, String body) {
-    return GestureDetector(
-      onTap: () => _showInfoSheet(title, body),
-      child: Container(
-        width: 20,
-        height: 20,
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
-          shape: BoxShape.circle,
-        ),
-        child: Center(
-          child: Text(
-            'i',
-            style: TextStyle(
-              fontSize: 11,
-              color: AppColors.muted,
-              fontFamily: 'serif',
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showInfoSheet(String title, String body) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF16161f),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          border: Border(top: BorderSide(color: Color.fromRGBO(255, 255, 255, 0.1))),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 44),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(title.toUpperCase(), style: AppFonts.label(size: 10)),
-            const SizedBox(height: 10),
-            Text(body, style: AppFonts.body(size: 15)),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-  Widget _buildAQICard() {
-    if (_aqi == null) {
-      return Container(
-        padding: const EdgeInsets.all(26),
-        decoration: BoxDecoration(
-          color: AppColors.cardTint,
-          border: Border.all(color: AppColors.cardBorder),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Air Quality Index', style: AppFonts.label()),
-                _infoButton(
-                  'AQI',
-                  "AQI runs 0–300+. Under 50 means the air is basically chef's kiss. 51–100 is fine for most. 101–150 starts affecting sensitive folks. Above 200 is when your lungs file formal complaints.",
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              "Like a restaurant rating — but for your lungs. 0 = Michelin star. 300 = just order in.",
-              style: AppFonts.body(
-                size: 13,
-                color: const Color.fromRGBO(240, 237, 232, 0.72),
-              ).copyWith(fontStyle: FontStyle.italic),
-            ),
-            const SizedBox(height: 12),
-            Text('?', style: AppFonts.display(size: 64)),
-            Text(
-              'No AQI data for this city.',
-              style: AppFonts.body(size: 14, color: AppColors.muted),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final aqiInfo = getAQIInfo(_aqi!.aqi);
-
-    return Container(
-      padding: const EdgeInsets.all(26),
-      decoration: BoxDecoration(
-        color: AppColors.cardTint,
-        border: Border.all(color: AppColors.cardBorder),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text('Air Quality Index', style: AppFonts.label()),
-                        const SizedBox(width: 8),
-                        _infoButton(
-                          'AQI',
-                          "AQI runs 0–300+. Under 50 means the air is basically chef's kiss. 51–100 is fine for most. 101–150 starts affecting sensitive folks. Above 200 is when your lungs file formal complaints.",
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      "Like a restaurant rating — but for your lungs. 0 = Michelin star. 300 = just order in.",
-                      style: AppFonts.body(
-                        size: 13,
-                        color: const Color.fromRGBO(240, 237, 232, 0.72),
-                      ).copyWith(fontStyle: FontStyle.italic),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '${_aqi!.aqi}',
-                      style: AppFonts.display(size: 64),
-                    ),
-                    if (_aqi!.stationName != null)
-                      Text(
-                        _aqi!.stationName!,
-                        style: AppFonts.body(size: 14, color: AppColors.muted),
-                      ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: aqiInfo.bgColor,
-                  border: Border.all(color: aqiInfo.dotColor.withOpacity(0.25)),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: aqiInfo.dotColor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      aqiInfo.label,
-                      style: AppFonts.body(
-                        size: 11,
-                        weight: FontWeight.w700,
-                        color: aqiInfo.color,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_aqi!.iaqi != null) _buildPollutants(),
-          const SizedBox(height: 16),
-          Container(
-            height: 6,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.07),
-              borderRadius: BorderRadius.circular(100),
-            ),
-            child: FractionallySizedBox(
-              widthFactor: (_aqi!.aqi / 300).clamp(0.0, 1.0),
-              alignment: Alignment.centerLeft,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: aqiInfo.color,
-                  borderRadius: BorderRadius.circular(100),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPollutants() {
-    final pollutants = _aqi!.iaqi!;
-    final pollKeys = ['pm25', 'pm10', 'o3', 'no2', 'so2', 'co'];
-    final pollNames = {
-      'pm25': 'PM2.5',
-      'pm10': 'PM10',
-      'o3': 'O₃',
-      'no2': 'NO₂',
-      'so2': 'SO₂',
-      'co': 'CO',
-    };
-    final pollPuns = {
-      'pm25': 'Tiny particles crashing your lungs uninvited. Absolute audacity.',
-      'pm10': 'Bigger dust. Still rude. The annoying older sibling of PM2.5.',
-      'o3': 'Ground-level ozone. Not the good kind. The kind your throat notices.',
-      'no2': "Traffic's gift to your airways. You're welcome, said no one.",
-      'so2': 'Industrial flavour in your air. Pairs poorly with breathing.',
-      'co': 'Colourless, odourless, and deeply impolite. Classic CO.',
-    };
-    final pollTips = {
-      'pm25': 'PM2.5 are fine particles smaller than 2.5 micrometres — they penetrate deep into lungs. Below 12 is good. Above 35 starts causing health effects.',
-      'pm10': 'PM10 are coarser particles up to 10 micrometres. Below 54 is acceptable. Above 155 is unhealthy.',
-      'o3': 'Ground-level ozone forms when sunlight reacts with pollutants. Below 54 ppb is good. Above 70 triggers health warnings.',
-      'no2': 'Nitrogen dioxide mainly comes from vehicle engines. High levels irritate airways. Below 53 ppb is safe.',
-      'so2': 'Sulphur dioxide comes from burning fossil fuels. High short exposures can harm the respiratory system. Below 35 ppb is good.',
-      'co': 'Carbon monoxide from incomplete combustion. At high levels it interferes with oxygen delivery. Below 4.4 ppm is safe.',
-    };
-
-    final availablePollutants = <Widget>[];
-    for (final k in pollKeys) {
-      if (pollutants[k] != null && pollutants[k]['v'] != null) {
-        availablePollutants.add(
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.cardTint,
-                border: Border.all(color: AppColors.cardBorder),
-                borderRadius: BorderRadius.circular(16),
-              ),
+            WeatherIcon(code: w.weatherCode, size: 80),
+            const SizedBox(width: 16),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(pollNames[k]!, style: AppFonts.label(size: 9)),
-                      _infoButton(pollNames[k]!, pollTips[k]!),
+                      Text(
+                        tempV,
+                        style: AppFonts.display(size: 60),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          sym,
+                          style: AppFonts.display(size: 24),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 8),
                   Text(
-                    pollPuns[k]!,
-                    style: AppFonts.body(
-                      size: 11,
-                      color: const Color.fromRGBO(240, 237, 232, 0.72),
-                    ).copyWith(fontStyle: FontStyle.italic),
+                    '${w.city}, ${w.country}',
+                    style: AppFonts.body(size: 14, color: AppColors.muted),
                   ),
-                  const SizedBox(height: 8),
                   Text(
-                    '${pollutants[k]['v']}',
-                    style: AppFonts.display(size: 22),
+                    w.description,
+                    style: AppFonts.body(size: 14, color: AppColors.muted),
                   ),
                 ],
               ),
             ),
-          ),
-        );
-      }
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAQI() {
+    if (_aqi == null || _aqi!.aqi == 0) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Text(
+          'AQI data unavailable',
+          style: AppFonts.body(size: 13, color: AppColors.muted),
+        ),
+      );
     }
 
-    if (availablePollutants.isEmpty) return const SizedBox.shrink();
-
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: availablePollutants,
-    );
-  }
-
-  Widget _buildActivities() {
-    final activities = getActivities(
-      _weather!.temp,
-      _weather!.humidity,
-      _weather!.windSpeed,
-      _aqi?.aqi,
-      _weather!.weatherCode,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('RECOMMENDED ACTIVITIES', style: AppFonts.label(size: 10)),
-        const SizedBox(height: 12),
-        if (activities.isEmpty)
-          Text(
-            'No specific recommendations for current conditions.',
-            style: AppFonts.body(size: 14, color: AppColors.muted),
-          )
-        else
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: activities.map((a) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: AppColors.cardTint,
-                  border: Border.all(color: AppColors.border),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(a['icon'] as IconData, size: 20, color: AppColors.accent),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          a['name'] as String,
-                          style: AppFonts.body(size: 14, weight: FontWeight.w500),
-                        ),
-                        Text(
-                          a['note'] as String,
-                          style: AppFonts.body(size: 12, color: AppColors.muted),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildPrecautions() {
-    final precautions = getPrecautions(
-      _weather!.temp,
-      _weather!.humidity,
-      _weather!.windSpeed,
-      _aqi?.aqi,
-      _weather!.weatherCode,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('PRECAUTIONS', style: AppFonts.label(size: 10)),
-        const SizedBox(height: 12),
-        ...precautions.map((p) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 9),
-            padding: const EdgeInsets.all(14),
+    final info = getAQIInfo(_aqi!.aqi);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: info.bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: info.color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 12,
+            height: 12,
             decoration: BoxDecoration(
-              color: AppColors.cardTint,
-              border: Border.all(color: AppColors.border),
-              borderRadius: BorderRadius.circular(12),
+              shape: BoxShape.circle,
+              color: info.dotColor,
             ),
-            child: Row(
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 1),
-                  child: Icon(
-                    Icons.warning_amber_rounded,
-                    size: 17,
-                    color: p['color'] as Color,
-                  ),
+                Text(
+                  'Air Quality: ${info.label}',
+                  style: AppFonts.body(size: 12, weight: FontWeight.w700, color: info.color),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    p['text'] as String,
-                    style: AppFonts.body(size: 14),
+                if (_aqi!.stationName != null)
+                  Text(
+                    'Station: ${_aqi!.stationName}',
+                    style: AppFonts.body(size: 10, color: AppColors.muted),
                   ),
-                ),
               ],
             ),
-          );
-        }).toList(),
+          ),
+          Text(
+            '${_aqi!.aqi}',
+            style: AppFonts.body(size: 18, weight: FontWeight.w700, color: info.color),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLeavingNow(OutfitInfo outfit, String tempV, String feelsV, String sym, UVInfo uv) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'NOW',
+          style: AppFonts.label(size: 10),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              _buildLeavingNowRow(outfit.emoji, 'What to wear', outfit.headline, outfit.tags.join(' · ')),
+              _buildLeavingNowRow(
+                '🌤️',
+                'UV index',
+                uv.val,
+                uv.label,
+              ),
+              _buildLeavingNowRow('🌡️', 'Feels like', '$feelsV$sym', 'Actual $tempV$sym · Humidity ${_weather!.humidity}%'),
+              _buildLeavingNowRow(
+                '💨',
+                'Wind speed',
+                '${_weather!.windSpeed.round()} m/s',
+                'Pressure ${_weather!.pressure} mb',
+              ),
+            ],
+          ),
+        ),
       ],
-    );
-  }
-
-  Widget _buildLeavingNowButton() {
-    return GestureDetector(
-      onTap: _showLeavingNow,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color.fromRGBO(200, 240, 78, 0.07),
-          border: Border.all(color: const Color.fromRGBO(200, 240, 78, 0.28)),
-          borderRadius: BorderRadius.circular(100),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.arrow_forward_ios, size: 15, color: AppColors.accent),
-            const SizedBox(width: 10),
-            Text(
-              'Leaving now',
-              style: AppFonts.body(
-                size: 14,
-                weight: FontWeight.w700,
-                color: AppColors.accent,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showLeavingNow() {
-    if (_weather == null) return;
-    final outfit = getOutfit(
-      _weather!.temp,
-      _weather!.humidity,
-      _weather!.windSpeed,
-      _weather!.weatherCode,
-    );
-    final needsUmbrella = _weather!.weatherCode >= 300 && _weather!.weatherCode < 700;
-    final aqiNum = _aqi?.aqi;
-    final needsMask = aqiNum != null && aqiNum > 150;
-    final visNum = _weather!.visibility / 1000;
-    final visWarn = visNum < 4;
-    final sym = _getSym();
-    final tempV = _formatTemp(_weather!.temp);
-    final feelsV = _formatTemp(_weather!.feelsLike);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF13131c),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: Color.fromRGBO(200, 240, 78, 0.14))),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 52),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text('Leaving now?', style: AppFonts.display(size: 24)),
-            const SizedBox(height: 4),
-            Text(
-              '${_weather!.city}, ${_weather!.country} · $tempV$sym · ${_weather!.description}',
-              style: AppFonts.body(size: 14, color: AppColors.muted),
-            ),
-            const SizedBox(height: 22),
-            _buildLeavingNowRow(outfit.emoji, 'What to wear', outfit.headline, outfit.tags.join(' · ')),
-            _buildLeavingNowRow(
-              needsUmbrella ? '☂️' : '🌤️',
-              'Umbrella?',
-              needsUmbrella ? 'Yes, take one.' : "Nope, you're good.",
-              needsUmbrella ? 'Rain or drizzle expected.' : 'Skies are clear enough.',
-            ),
-            _buildLeavingNowRow(
-              needsMask ? '😷' : '😮‍💨',
-              'Air quality',
-              needsMask ? 'Wear a mask.' : (aqiNum != null ? 'AQI $aqiNum — breathable.' : 'No AQI data.'),
-              needsMask ? 'AQI above 150. Sensitive groups must cover up.' : '',
-            ),
-            _buildLeavingNowRow('🌡️', 'Feels like', '$feelsV$sym', 'Actual $tempV$sym · Humidity ${_weather!.humidity}%'),
-            _buildLeavingNowRow(
-              visWarn ? '🌫️' : '👁️',
-              'Visibility',
-              '${visNum.toStringAsFixed(1)} km',
-              visWarn ? 'Low visibility — drive carefully.' : 'Clear enough to go.',
-            ),
-            _buildLeavingNowRow(
-              _weather!.windSpeed > 8 ? '💨' : '🍃',
-              'Wind',
-              '${_weather!.windSpeed} m/s',
-              _weather!.windSpeed > 10
-                  ? 'Strong gusts. Secure loose items.'
-                  : _weather!.windSpeed > 8
-                      ? 'Noticeable wind.'
-                      : 'Calm conditions.',
-            ),
-            const SizedBox(height: 22),
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(200, 240, 78, 0.09),
-                  border: Border.all(color: const Color.fromRGBO(200, 240, 78, 0.22)),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Center(
-                  child: Text(
-                    'Back to full view',
-                    style: AppFonts.body(
-                      size: 14,
-                      weight: FontWeight.w700,
-                      color: AppColors.accent,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
   Widget _buildLeavingNowRow(String emoji, String label, String value, String note) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 13),
+      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 12),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: AppColors.border),
@@ -2024,6 +1259,62 @@ class _WeatherHomePageState extends State<<WeatherHomePage>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildActivities(List<Map<String, dynamic>> acts) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'RECOMMENDED',
+          style: AppFonts.label(size: 10),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: acts.map((a) {
+            return Chip(
+              avatar: Icon(a['icon'] as IconData, size: 16, color: AppColors.accent),
+              label: Text(a['name'].toString()),
+              labelStyle: AppFonts.body(size: 12),
+              backgroundColor: AppColors.surface,
+              side: BorderSide(color: AppColors.border),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrecautions(List<Map<String, dynamic>> precs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'PRECAUTIONS',
+          style: AppFonts.label(size: 10),
+        ),
+        const SizedBox(height: 8),
+        ...precs.map((p) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: (p['color'] as Color).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: (p['color'] as Color).withOpacity(0.3)),
+              ),
+              child: Text(
+                p['text'].toString(),
+                style: AppFonts.body(size: 13, color: p['color'] as Color),
+              ),
+            ),
+          );
+        }).toList(),
+      ],
     );
   }
 
@@ -2077,6 +1368,62 @@ class _WeatherHomePageState extends State<<WeatherHomePage>
       ),
     );
   }
+
+  Widget _iconButton(IconData icon, VoidCallback onPressed) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, color: AppColors.accent, size: 24),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          if (_weather != null)
+            SkyGradient(weatherCode: _weather!.weatherCode, timezone: _weather!.timezone),
+          if (_weather != null)
+            AnimatedOrbs(weatherCode: _weather!.weatherCode, temp: _weather!.temp),
+          Container(
+            color: _weather == null ? AppColors.bg : Colors.transparent,
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 24),
+                  _buildSearch(),
+                  if (_error != null) ...[
+                    const SizedBox(height: 16),
+                    _buildError(),
+                  ],
+                  if (_isLoading) ...[
+                    const SizedBox(height: 80),
+                    _buildLoader(),
+                  ],
+                  if (_weather != null && !_isLoading) ...[
+                    const SizedBox(height: 28),
+                    _buildResults(),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 
@@ -2085,15 +1432,14 @@ class _WeatherHomePageState extends State<<WeatherHomePage>
 // ═══════════════════════════════════════════════════════════
 class SettingsSheet extends StatefulWidget {
   final Map<String, dynamic> prefs;
-  final List<<HistoryItem> history;
+  final List<HistoryItem> history;
   final String currentUnit;
   final Function(String) onUnitChange;
   final Function(Map<String, dynamic>) onPrefsUpdate;
-  final Function(List<<HistoryItem>) onHistoryUpdate;
+  final Function(List<HistoryItem>) onHistoryUpdate;
   final Function(String) onLoadCity;
 
-  const SettingsSheet({
-    super.key,
+  SettingsSheet({
     required this.prefs,
     required this.history,
     required this.currentUnit,
@@ -2104,411 +1450,155 @@ class SettingsSheet extends StatefulWidget {
   });
 
   @override
-  State<<SettingsSheet> createState() => _SettingsSheetState();
+  State<SettingsSheet> createState() => _SettingsSheetState();
 }
 
-class _SettingsSheetState extends State<<SettingsSheet> {
+class _SettingsSheetState extends State<SettingsSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF111118),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Color.fromRGBO(255, 255, 255, 0.09))),
-      ),
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 52),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 22),
-          Text('Settings', style: AppFonts.display(size: 24)),
-          const SizedBox(height: 6),
-          Text(
-            'Manage your Sylph preferences, history & data.',
-            style: AppFonts.body(size: 14, color: AppColors.muted),
-          ),
-          const SizedBox(height: 26),
-          _buildSection('Personalisation', [
-            _buildSettingsRow(
-              'Your Name',
-              widget.prefs['userName'] != null
-                  ? 'Hi, ${widget.prefs['userName']}!'
-                  : 'Used for your greeting.',
-              'Change',
-              true,
-              () => _changeName(),
-            ),
-            _buildSettingsRow(
-              'Home City',
-              widget.prefs['homeCity'] != null
-                  ? 'Currently set to: ${widget.prefs['homeCity']}'
-                  : 'Auto-loads on startup & refreshes.',
-              'Set',
-              true,
-              () => _changeHomeCity(),
-            ),
-          ]),
-          _buildSection('Display', [
-            _buildSettingsRow(
-              'Temperature Unit',
-              'Switch between Celsius and Fahrenheit.',
-              '',
-              false,
-              null,
-              trailing: Container(
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(255, 255, 255, 0.05),
-                  border: Border.all(color: AppColors.border),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                padding: const EdgeInsets.all(3),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _settingsUnitButton('C'),
-                    _settingsUnitButton('F'),
-                  ],
-                ),
-              ),
-            ),
-          ]),
-          _buildSection('Search History', [
-            if (widget.history.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  'No searches yet.',
-                  style: AppFonts.body(size: 14, color: AppColors.muted).copyWith(fontStyle: FontStyle.italic),
-                ),
-              )
-            else
-              ...widget.history.asMap().entries.map((e) {
-                final item = e.value;
-                final date = '${item.timestamp.month}/${item.timestamp.day} ${item.timestamp.hour.toString().padLeft(2, '0')}:${item.timestamp.minute.toString().padLeft(2, '0')}';
-                final tempDisplay = widget.currentUnit == 'F'
-                    ? '${toF(item.tempC)}°F'
-                    : '${item.tempC.round()}°C';
-                return GestureDetector(
-                  onTap: () {
-                    widget.onLoadCity(item.city);
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color.fromRGBO(255, 255, 255, 0.03),
-                      border: Border.all(color: AppColors.border),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${item.city}${item.country.isNotEmpty ? ', ${item.country}' : ''}',
-                                style: AppFonts.body(size: 14, weight: FontWeight.w500),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                '$date · ${item.description}${item.aqiNum != null ? ' · AQI ${item.aqiNum}' : ''}',
-                                style: AppFonts.body(size: 12, color: AppColors.muted),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          tempDisplay,
-                          style: AppFonts.display(size: 18),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {
-                            final newHistory = List<<HistoryItem>.from(widget.history);
-                            newHistory.removeAt(e.key);
-                            widget.onHistoryUpdate(newHistory);
-                            setState(() {});
-                          },
-                          child: Icon(Icons.close, size: 18, color: AppColors.muted),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () {
-                widget.onHistoryUpdate([]);
-                setState(() {});
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color.fromRGBO(240, 78, 106, 0.09),
-                  border: Border.all(color: const Color.fromRGBO(240, 78, 106, 0.3)),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Text(
-                  'Clear All History',
-                  style: AppFonts.body(size: 13, color: AppColors.danger),
-                ),
-              ),
-            ),
-          ]),
-          _buildSection('Data', [
-            _buildSettingsRow(
-              'Export History',
-              'Download your search history as JSON.',
-              'Export',
-              true,
-              () {},
-            ),
-            _buildSettingsRow(
-              'Clear All Data',
-              'Remove all stored history and preferences.',
-              'Clear',
-              true,
-              () {
-                widget.onPrefsUpdate({});
-                widget.onHistoryUpdate([]);
-                setState(() {});
-              },
-              isDanger: true,
-            ),
-          ]),
-          _buildSection('About', [
-            _buildSettingsRow(
-              'Sylph Weather & Air',
-              'Data: OpenWeatherMap · WAQI · Built by Vijayarka',
-              '',
-              false,
-              null,
-            ),
-          ]),
-          const SizedBox(height: 22),
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              decoration: BoxDecoration(
-                color: const Color.fromRGBO(200, 240, 78, 0.09),
-                border: Border.all(color: const Color.fromRGBO(200, 240, 78, 0.22)),
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: Center(
-                child: Text(
-                  'Done',
-                  style: AppFonts.body(
-                    size: 14,
-                    weight: FontWeight.w700,
-                    color: AppColors.accent,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, List<<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.only(bottom: 12),
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: AppColors.border),
-            ),
-          ),
-          child: Text(
-            title.toUpperCase(),
-            style: AppFonts.label(size: 10),
-          ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
-        ...children,
-        const SizedBox(height: 28),
-      ],
-    );
-  }
-
-  Widget _buildSettingsRow(
-    String label,
-    String sub,
-    String btnText,
-    bool hasButton,
-    VoidCallback? onTap, {
-    Widget? trailing,
-    bool isDanger = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 13),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(label, style: AppFonts.body(size: 15)),
-                const SizedBox(height: 2),
                 Text(
-                  sub,
-                  style: AppFonts.body(size: 12, color: AppColors.muted),
+                  'Settings',
+                  style: AppFonts.display(size: 24),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                  color: AppColors.accent,
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            Text(
+              'Temperature Unit',
+              style: AppFonts.label(size: 10),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _unitButton('°C', widget.currentUnit == 'C', () => widget.onUnitChange('C')),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _unitButton('°F', widget.currentUnit == 'F', () => widget.onUnitChange('F')),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Search History',
+              style: AppFonts.label(size: 10),
+            ),
+            const SizedBox(height: 8),
+            if (widget.history.isEmpty)
+              Text(
+                'No history yet',
+                style: AppFonts.body(size: 13, color: AppColors.muted),
+              )
+            else
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: widget.history.map((h) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: InkWell(
+                      onTap: () {
+                        widget.onLoadCity(h.city);
+                        Navigator.pop(context);
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${h.city}, ${h.country}',
+                                  style: AppFonts.body(size: 13, weight: FontWeight.w500),
+                                ),
+                                Text(
+                                  '${h.tempC.round()}° · ${h.description}',
+                                  style: AppFonts.body(size: 11, color: AppColors.muted),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () async {
+                              final updated = widget.history.where((x) => x != h).toList();
+                              widget.onHistoryUpdate(updated);
+                              setState(() {});
+                            },
+                            color: AppColors.danger,
+                            iconSize: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _unitButton(String label, bool isActive, VoidCallback onPressed) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.accent : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isActive ? AppColors.accent : AppColors.border,
+            ),
           ),
-          if (trailing != null)
-            trailing
-          else if (hasButton && onTap != null)
-            GestureDetector(
-              onTap: onTap,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isDanger
-                      ? const Color.fromRGBO(240, 78, 106, 0.09)
-                      : const Color.fromRGBO(200, 240, 78, 0.09),
-                  border: Border.all(
-                    color: isDanger
-                        ? const Color.fromRGBO(240, 78, 106, 0.3)
-                        : const Color.fromRGBO(200, 240, 78, 0.28),
-                  ),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Text(
-                  btnText,
-                  style: AppFonts.body(
-                    size: 13,
-                    color: isDanger ? AppColors.danger : AppColors.accent,
-                  ),
-                ),
+          child: Center(
+            child: Text(
+              label,
+              style: AppFonts.body(
+                size: 14,
+                weight: FontWeight.w600,
+                color: isActive ? AppColors.bg : AppColors.text,
               ),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _settingsUnitButton(String unit) {
-    final isActive = widget.currentUnit == unit;
-    return GestureDetector(
-      onTap: () => widget.onUnitChange(unit),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.accent : Colors.transparent,
-          borderRadius: BorderRadius.circular(100),
-        ),
-        child: Text(
-          '°$unit',
-          style: AppFonts.body(
-            size: 13,
-            weight: FontWeight.w500,
-            color: isActive ? AppColors.bg : AppColors.muted,
           ),
         ),
-      ),
-    );
-  }
-
-  void _changeName() {
-    final controller = TextEditingController(text: widget.prefs['userName'] ?? '');
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text('Your Name', style: AppFonts.display(size: 18)),
-        content: TextField(
-          controller: controller,
-          style: AppFonts.body(),
-          decoration: InputDecoration(
-            hintText: 'Enter your name',
-            hintStyle: AppFonts.body(color: AppColors.muted),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.border),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: AppFonts.body(color: AppColors.muted)),
-          ),
-          TextButton(
-            onPressed: () {
-              final newPrefs = Map<String, dynamic>.from(widget.prefs);
-              newPrefs['userName'] = controller.text.trim();
-              widget.onPrefsUpdate(newPrefs);
-              Navigator.pop(context);
-              setState(() {});
-            },
-            child: Text('Save', style: AppFonts.body(color: AppColors.accent)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _changeHomeCity() {
-    final controller = TextEditingController(text: widget.prefs['homeCity'] ?? '');
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text('Home City', style: AppFonts.display(size: 18)),
-        content: TextField(
-          controller: controller,
-          style: AppFonts.body(),
-          decoration: InputDecoration(
-            hintText: 'e.g. Delhi, Tokyo, London…',
-            hintStyle: AppFonts.body(color: AppColors.muted),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.border),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: AppFonts.body(color: AppColors.muted)),
-          ),
-          TextButton(
-            onPressed: () {
-              final newPrefs = Map<String, dynamic>.from(widget.prefs);
-              newPrefs['homeCity'] = controller.text.trim();
-              widget.onPrefsUpdate(newPrefs);
-              Navigator.pop(context);
-              setState(() {});
-            },
-            child: Text('Save', style: AppFonts.body(color: AppColors.accent)),
-          ),
-        ],
       ),
     );
   }
 }
+
 
 // ═══════════════════════════════════════════════════════════
 //  ONBOARDING SHEET
@@ -2517,149 +1607,126 @@ class OnboardingSheet extends StatefulWidget {
   final Function(String, String) onComplete;
   final VoidCallback onSkip;
 
-  const OnboardingSheet({
-    super.key,
+  OnboardingSheet({
     required this.onComplete,
     required this.onSkip,
   });
 
   @override
-  State<<OnboardingSheet> createState() => _OnboardingSheetState();
+  State<OnboardingSheet> createState() => _OnboardingSheetState();
 }
 
-class _OnboardingSheetState extends State<<OnboardingSheet> {
-  final _nameController = TextEditingController();
-  final _cityController = TextEditingController();
+class _OnboardingSheetState extends State<OnboardingSheet> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF13131e),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: Color.fromRGBO(255, 255, 255, 0.09))),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
       ),
-      padding: const EdgeInsets.fromLTRB(28, 36, 28, 44),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          RichText(
-            text: TextSpan(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Welcome to Sylph',
+              style: AppFonts.display(size: 24),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your personal weather companion',
+              style: AppFonts.body(size: 13, color: AppColors.muted),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Your name',
+              style: AppFonts.label(size: 10),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _nameController,
+              style: AppFonts.body(),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                hintText: 'Enter your name',
+                hintStyle: AppFonts.body(color: AppColors.muted),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Home city',
+              style: AppFonts.label(size: 10),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _cityController,
+              style: AppFonts.body(),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                hintText: 'Search your city...',
+                hintStyle: AppFonts.body(color: AppColors.muted),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                TextSpan(text: 'Syl', style: AppFonts.boldonse(size: 32)),
-                TextSpan(text: 'ph', style: AppFonts.boldonse(size: 32, color: AppColors.accent)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Weather & air, with personality.',
-            style: AppFonts.body(size: 14, color: AppColors.muted),
-          ),
-          const SizedBox(height: 28),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'WHAT SHOULD WE CALL YOU?',
-              style: AppFonts.label(size: 11),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _nameController,
-            style: AppFonts.body(),
-            decoration: InputDecoration(
-              hintText: 'Your name (optional)',
-              hintStyle: AppFonts.body(color: AppColors.muted),
-              filled: true,
-              fillColor: const Color.fromRGBO(255, 255, 255, 0.05),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.accent.withOpacity(0.4)),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'YOUR HOME CITY (FOR LIVE UPDATES)',
-              style: AppFonts.label(size: 11),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _cityController,
-            style: AppFonts.body(),
-            decoration: InputDecoration(
-              hintText: 'e.g. Delhi, Tokyo, London…',
-              hintStyle: AppFonts.body(color: AppColors.muted),
-              filled: true,
-              fillColor: const Color.fromRGBO(255, 255, 255, 0.05),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.accent.withOpacity(0.4)),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-          ),
-          const SizedBox(height: 16),
-          GestureDetector(
-            onTap: () {
-              widget.onComplete(_nameController.text.trim(), _cityController.text.trim());
-              Navigator.pop(context);
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: Center(
-                child: Text(
-                  "Let's go →",
-                  style: AppFonts.body(
-                    size: 15,
-                    weight: FontWeight.w700,
-                    color: AppColors.bg,
+                TextButton(
+                  onPressed: () {
+                    widget.onSkip();
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    'Skip',
+                    style: AppFonts.body(size: 14, color: AppColors.muted),
                   ),
                 ),
-              ),
+                ElevatedButton(
+                  onPressed: () {
+                    widget.onComplete(_nameController.text, _cityController.text);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.bg,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  child: Text(
+                    'Continue',
+                    style: AppFonts.body(size: 14, weight: FontWeight.w600),
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () {
-              widget.onSkip();
-              Navigator.pop(context);
-            },
-            child: Text(
-              'Skip for now',
-              style: AppFonts.body(size: 13, color: AppColors.muted).copyWith(
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
-        ],
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _cityController.dispose();
+    super.dispose();
   }
 }
