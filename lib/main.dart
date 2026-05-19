@@ -108,8 +108,8 @@ class AppFonts {
 // ═══════════════════════════════════════════════════════════
 //  API KEYS (use --dart-define for secure builds)
 // ═══════════════════════════════════════════════════════════
-const String OWM_KEY = String.fromEnvironment('OWM_KEY', defaultValue: 'fa736ae62b05126fda481140ce2f39ef');
-const String WAQI_KEY = String.fromEnvironment('WAQI_KEY', defaultValue: '8a0e521b8a539d30e682f61b71cf7413ad20d7ae');
+const String OWM_KEY = String.fromEnvironment('OWM_KEY', defaultValue: '');
+const String WAQI_KEY = String.fromEnvironment('WAQI_KEY', defaultValue: '');
 
 // ═══════════════════════════════════════════════════════════
 //  DATA MODELS
@@ -226,7 +226,7 @@ class HistoryItem {
   );
 }
 
-// ═══════════════════════════════════════════════════════════
+// ════════════════════════════════════════���══════════════════
 //  MAIN PAGE STATE
 // ═══════════════════════════════════════════════════════════
 class WeatherHomePage extends StatefulWidget {
